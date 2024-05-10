@@ -26,5 +26,6 @@
 (struct Peek () #:transparent) ;; peeks a string from the stack and matches it -- ok
 (struct PeekAll () #:transparent) ;; peeks the entire state of the stack and matches it
 (struct Drop () #:transparent)
+(struct DropAll () #:transparent)
 
 (provide (all-defined-out))

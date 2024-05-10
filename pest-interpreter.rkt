@@ -2,10 +2,11 @@
 
 (require "pest-ast.rkt")
 
-;; a = "a"
-;; b = a* ~ "c"
-
 (struct Stk (open values))
+
+(define (print-stk stk input)
+  (for ([pc (length (Stk-values stk))])
+    (printf "~a -> ~a\n" pc (list-ref input pc))))
 
 (struct Params (expr input sp stk hash)) ;; expr  input stack hash
 
@@ -237,22 +238,29 @@
                                  [stk (Stk stkb stkv)]
                                  )
                             (Type #t _sp stk))])]
-
+                            
+      [(DropAll) (cond [(eq? (length (Stk-values _stk)) 0) (Type #f _sp _stk)]
+                    [else (Type #t _sp '())]
+                    )]
       )))
 
 (define hash (make-immutable-hash '(
                                     ("a" (Sym 1))
                                     )))
 
-; (Stk-values (Type-stk (process (Cat (Cat (Sym "a") (Push (Sym "b"))) (Sym "c")) '() "ab" (Stk #f ""))))
-(define type (process
-              (Params
-               (Cat (Cat (Push (Cat (Sym 1) (Sym 2))) (Sym 3)) (Drop)) ;; expr
+(define p (Params
+               (Cat (Cat (Push (Cat (Sym 1) (Sym 2))) (Sym 3)) (Push (Sym 4))) ;; expr
                ; (Var "a")
-               '(1 2 3 2 1) ;; input
+               '(1 2 3 2 1 4) ;; input
                0 ;; sp
                (Stk #f '()) ;; stk
                hash ;; hash
-               )))
+               ))
+
+(define type (process p))
+
 type
 (Stk-values (Type-stk type))
+
+(car (hash-ref hash "a"))
+(print-stk (Type-stk type) (Params-input p))
