@@ -4,9 +4,17 @@
 
 (struct Stk (open values))
 
-(define (print-stk stk input)
-  (for ([pc (length (Stk-values stk))])
-    (printf "~a -> ~a\n" pc (list-ref input pc))))
+(define (stk->list stk input)
+  (map (lambda (pc)
+         (list-ref input pc))
+       (Stk-values stk)))
+
+(define (print-type p type)
+  (printf "Result: ~a\nInput: ~a \nConsumed: ~a\nStack: ~a\n"
+          (if (Type-bool type) "Accept" "Error")
+          (Params-input p)
+          (take (Params-input p) (Type-sp type))
+          (stk->list (Type-stk type) (Params-input p))))
 
 (struct Params (expr input sp stk hash)) ;; expr  input stack hash
 
@@ -218,18 +226,18 @@
                             ])]
 
       [(PeekAll) (cond [(eq? (length (Stk-values _stk)) 0) (Type #t _sp _stk)]
-                      [(<= (length _input) _sp) (Type #f _sp _stk)]
-                      [else (let* (
-                                   [stkv (cdr (Stk-values _stk))]
-                                   [stkc  (list-ref _input (car (Stk-values _stk)))]
-                                   )
-                              (cond [(eq? (list-ref _input _sp) stkc) (let* ([type (process (Params (PeekAll) _input (+ _sp 1) (Stk (Stk-open _stk) stkv) _hash))]
-                                                                             [b (Type-bool type)]
-                                                                             [sp (Type-sp type)]
-                                                                             )
-                                                                        (Type b sp _stk))]
-                                    [else (Type #f _sp _stk)]))
-                            ])]
+                       [(<= (length _input) _sp) (Type #f _sp _stk)]
+                       [else (let* (
+                                    [stkv (cdr (Stk-values _stk))]
+                                    [stkc  (list-ref _input (car (Stk-values _stk)))]
+                                    )
+                               (cond [(eq? (list-ref _input _sp) stkc) (let* ([type (process (Params (PeekAll) _input (+ _sp 1) (Stk (Stk-open _stk) stkv) _hash))]
+                                                                              [b (Type-bool type)]
+                                                                              [sp (Type-sp type)]
+                                                                              )
+                                                                         (Type b sp _stk))]
+                                     [else (Type #f _sp _stk)]))
+                             ])]
 
       [(Drop) (cond [(eq? (length (Stk-values _stk)) 0) (Type #f _sp _stk)]
                     [else (let* (
@@ -238,10 +246,10 @@
                                  [stk (Stk stkb stkv)]
                                  )
                             (Type #t _sp stk))])]
-                            
+
       [(DropAll) (cond [(eq? (length (Stk-values _stk)) 0) (Type #f _sp _stk)]
-                    [else (Type #t _sp '())]
-                    )]
+                       [else (Type #t _sp '())]
+                       )]
       )))
 
 (define hash (make-immutable-hash '(
@@ -249,18 +257,14 @@
                                     )))
 
 (define p (Params
-               (Cat (Cat (Push (Cat (Sym 1) (Sym 2))) (Sym 3)) (Push (Sym 4))) ;; expr
-               ; (Var "a")
-               '(1 2 3 2 1 4) ;; input
-               0 ;; sp
-               (Stk #f '()) ;; stk
-               hash ;; hash
-               ))
+           (Cat (Cat (Push (Cat (Push (Cat (Sym 1) (Sym 2))) (Sym 3))) (Sym 4)) (Push (Sym 5))) ;; expr
+           ; (Var "a")
+           '(1 2 3 4 5) ;; input
+           0 ;; sp
+           (Stk #f '()) ;; stk
+           hash ;; hash
+           ))
 
 (define type (process p))
 
-type
-(Stk-values (Type-stk type))
-
-(car (hash-ref hash "a"))
-(print-stk (Type-stk type) (Params-input p))
+(print-type p type)
