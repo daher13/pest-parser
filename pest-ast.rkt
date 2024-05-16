@@ -2,8 +2,6 @@
 
 (struct Pest (vars start) #:transparent)
 
-; (define-type PE (Union Eps Any Sym Rng Annot Bind Var Cat Alt Not Rep))
-
 (struct Eps () #:transparent)
 (struct Any () #:transparent)
 (struct Sym (ch) #:transparent)
@@ -27,5 +25,6 @@
 (struct PeekAll () #:transparent) ;; peeks the entire state of the stack and matches it
 (struct Drop () #:transparent)
 (struct DropAll () #:transparent)
+(struct Tonat () #:transparent)
 
 (provide (all-defined-out))

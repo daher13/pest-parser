@@ -111,12 +111,6 @@
                   (cond [b (Type #t _sp stk)]
                         [else (Type #f _sp _stk)]))]
 
-      [(Var v) (let* (
-                      [e (car (hash-ref _hash v))]
-                      ;   [type (process (Params e _input _sp _stk _hash))]
-                      )
-                 e)]
-
       [(RepN e n) (cond
                     [(> n 0) (let* (
                                     [type (process (Params e _input _sp _stk _hash))]
@@ -250,16 +244,25 @@
       [(DropAll) (cond [(eq? (length (Stk-values _stk)) 0) (Type #f _sp _stk)]
                        [else (Type #t _sp '())]
                        )]
+
+      [(Var v) (let ([e (hash-ref _hash v)])
+                 (process (Params e _input _sp _stk _hash)))]
+
+      [(Tonat) (length _stk)]
       )))
 
-(define hash (make-immutable-hash '(
-                                    ("a" (Sym 1))
-                                    )))
+(define hash (make-hash))
+(hash-set! hash 'bit (Alt (Sym 0) (Sym 1)))
+(hash-set! hash 'byte (RepN (Var 'bit) 8))
+(hash-set! hash 'type (Var 'byte))
+(hash-set! hash 'length (RepN (Var 'byte) 2))
+(hash-set! hash 'challenge (RepN (Var 'byte) 1))
+(hash-set! hash 'padding (Kln (Var 'byte)))
+
 
 (define p (Params
-           (Cat (Cat (Push (Cat (Push (Cat (Sym 1) (Sym 2))) (Sym 3))) (Sym 4)) (Push (Sym 5))) ;; expr
-           ; (Var "a")
-           '(1 2 3 4 5) ;; input
+           (Cat (Var 'type) (Cat (Var 'length) (Cat (Var 'challenge) (Var 'padding)))) ;; expr
+           '(1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0)
            0 ;; sp
            (Stk #f '()) ;; stk
            hash ;; hash
